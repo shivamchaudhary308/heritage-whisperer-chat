@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Trash2, Send, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Trash2, Send, Bot, User, Volume2, VolumeX, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -10,6 +11,12 @@ interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+}
+
+interface Language {
+  code: string;
+  name: string;
+  voice: string;
 }
 
 interface ChatBotProps {
@@ -28,8 +35,24 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isTTSEnabled, setIsTTSEnabled] = useState(true);
+  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [isPlaying, setIsPlaying] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Available languages for TTS
+  const languages: Language[] = [
+    { code: 'en', name: 'English', voice: 'EXAVITQu4vr4xnSDxMaL' },
+    { code: 'es', name: 'Spanish', voice: 'TX3LPaxmHKxFdv7VOQHJ' },
+    { code: 'fr', name: 'French', voice: 'N2lVS1w4EtoT3dr4eOWO' },
+    { code: 'de', name: 'German', voice: 'CwhRBWXzGAHq8TQ4Fs17' },
+    { code: 'it', name: 'Italian', voice: 'JBFqnCBsd6RMkjVDRZzb' },
+    { code: 'pt', name: 'Portuguese', voice: 'FGY2WhTYpPnrIDTdsKH5' },
+    { code: 'zh', name: 'Chinese', voice: 'SAz9YHcvj6GT2YYXdXww' },
+    { code: 'ja', name: 'Japanese', voice: 'XB0fDUnXU5powFXDhCwa' },
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,16 +83,94 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
     setIsTyping(true);
 
     // Simulate bot response
-    setTimeout(() => {
+    setTimeout(async () => {
+      const botResponseText = generateBotResponse(inputValue);
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: generateBotResponse(inputValue),
+        text: botResponseText,
         sender: 'bot',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
+
+      // Auto-play TTS for bot response if enabled
+      if (isTTSEnabled) {
+        await playTextToSpeech(botResponseText);
+      }
     }, 1500);
+  };
+
+  // Text-to-Speech function (placeholder for ElevenLabs integration)
+  const playTextToSpeech = async (text: string) => {
+    try {
+      setIsPlaying(true);
+      
+      // TODO: Replace with actual ElevenLabs API call
+      // For now, this is a placeholder structure
+      const selectedLanguage = languages.find(lang => lang.code === currentLanguage);
+      
+      // Placeholder: Replace this with actual ElevenLabs API call
+      console.log('TTS Request:', {
+        text,
+        voice_id: selectedLanguage?.voice,
+        model_id: 'eleven_multilingual_v2',
+        language: currentLanguage
+      });
+
+      // Simulate audio playback
+      setTimeout(() => {
+        setIsPlaying(false);
+      }, text.length * 50); // Rough estimate of speech duration
+
+      // TODO: Implement actual ElevenLabs API integration here
+      /*
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + selectedLanguage?.voice, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': 'YOUR_API_KEY_HERE' // Add your API key here
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5
+          }
+        })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+        
+        audio.onended = () => {
+          setIsPlaying(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+      }
+      */
+      
+    } catch (error) {
+      console.error('TTS Error:', error);
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleTTS = () => {
+    setIsTTSEnabled(!isTTSEnabled);
+  };
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
   };
 
   const generateBotResponse = (userInput: string): string => {
@@ -127,7 +228,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="bg-chat-background border border-chat-border rounded-lg shadow-chat w-80 h-96 flex flex-col overflow-hidden">
+        <div className="bg-chat-background border border-chat-border rounded-lg shadow-chat w-96 h-[32rem] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-primary p-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -140,6 +241,26 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTTS}
+                className="text-chat-primary-foreground hover:bg-chat-primary-foreground/20 h-8 w-8"
+                title={isTTSEnabled ? "Disable Text-to-Speech" : "Enable Text-to-Speech"}
+              >
+                {isTTSEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+              {isPlaying && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={stopAudio}
+                  className="text-chat-primary-foreground hover:bg-chat-primary-foreground/20 h-8 w-8"
+                  title="Stop Audio"
+                >
+                  <VolumeX className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -177,15 +298,33 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
                     </div>
                   )}
                   
-                  <div
-                    className={cn(
-                      "max-w-[70%] p-3 rounded-lg text-sm",
-                      message.sender === 'user'
-                        ? "bg-chat-user-message text-white"
-                        : "bg-chat-bot-message text-foreground"
+                   <div className="flex flex-col space-y-2 max-w-[75%]">
+                    <div
+                      className={cn(
+                        "p-3 rounded-lg text-sm",
+                        message.sender === 'user'
+                          ? "bg-chat-user-message text-white"
+                          : "bg-chat-bot-message text-foreground"
+                      )}
+                    >
+                      {message.text}
+                    </div>
+                    
+                    {/* TTS Button for bot messages */}
+                    {message.sender === 'bot' && isTTSEnabled && (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => playTextToSpeech(message.text)}
+                          disabled={isPlaying}
+                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          <Volume2 className="h-3 w-3 mr-1" />
+                          {isPlaying ? 'Playing...' : 'Listen'}
+                        </Button>
+                      </div>
                     )}
-                  >
-                    {message.text}
                   </div>
 
                   {message.sender === 'user' && (
@@ -214,6 +353,27 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
             </div>
           </ScrollArea>
 
+          {/* Language & TTS Settings */}
+          {isTTSEnabled && (
+            <div className="px-4 py-2 border-t border-chat-border bg-chat-surface/50">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Voice Language:</span>
+                <Select value={currentLanguage} onValueChange={setCurrentLanguage}>
+                  <SelectTrigger className="w-32 h-6 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code} className="text-xs">
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
           {/* Input Area */}
           <div className="p-4 border-t border-chat-border bg-chat-surface">
             <div className="flex space-x-2">
@@ -235,6 +395,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ className }) => {
               </Button>
             </div>
           </div>
+
+          {/* Hidden audio element for TTS playback */}
+          <audio ref={audioRef} style={{ display: 'none' }} />
         </div>
       )}
     </div>
