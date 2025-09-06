@@ -36,6 +36,30 @@ All colors MUST be HSL.
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
+    /* Chatbot Design System */
+    --chat-primary: 30 40% 28%;
+    --chat-primary-foreground: 0 0% 98%;
+    --chat-accent: 25 65% 55%;
+    --chat-accent-foreground: 0 0% 98%;
+    --chat-background: 0 0% 100%;
+    --chat-surface: 0 0% 98%;
+    --chat-border: 210 20% 92%;
+    --chat-user-message: 220 70% 50%;
+    --chat-bot-message: 0 0% 96%;
+    --chat-text-secondary: 215.4 16.3% 46.9%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--chat-primary)), hsl(var(--chat-accent)));
+    --gradient-chat: linear-gradient(180deg, hsl(var(--chat-background)), hsl(var(--chat-surface)));
+    
+    /* Shadows */
+    --shadow-chat: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+    --shadow-float: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
